@@ -1,0 +1,49 @@
+Q6  check file integrity
+    • Download the repository and update it .
+    • There is file  which contains some files path with checksum 
+    • Now check file integrity and print  msg “check sum correct”
+    • if file checksum does not match print msg “checksum not match”
+ ==================================================================================
+
+
+
+
+---
+- name: checksum
+  hosts: localhost
+  become: yes
+  vars_files:
+    - files_list.yml
+  tasks:
+    - name: get checksum via stat command 
+      stat:
+        path: "{{ item.name }}"
+        #checksum_algorithm: md5/sha224/sha256/sha384/sha512 >>>>> mention checksum algorithm if specified else sha1 is default, we can mention sha1 also anyhow.
+      with_items: "{{ files }}"
+      register: output
+
+    - name: Correct checksum
+      debug:
+        msg: check sum correct
+        when: item.item.checksum.split()[0] != item.stat.checksum
+     #################### when: item.item.checksum.split()|first == item.stat.checksum -- we can use this also
+      loop: "{{ output.results }}"
+      loop_control:
+        label: "{{item.item.name}}"
+
+    - name: checksum not correct
+      debug:
+        msg: checksum not match
+      when: item.item.checksum.split()[0] != item.stat.checksum
+          #################### when: item.item.checksum.split()|first != item.stat.checksum -- we can use this also
+      loop: "{{ output.results }}"
+      loop_control:
+        label: "{{item.item.name}}"
+
+# md5    - 33 chars
+# sha1   - 41 chars >>>>> Default
+# sha224 - 57 chars
+# sha256 - 65 chars
+# sha384 - 97 chars
+# sha512 - 129 chars
+#
